@@ -7,7 +7,7 @@ steps_todo.py
 import json
 import logging
 
-from behave import given, when, then, step, use_step_matcher
+from behave import given, when, then, step
 
 from utils.logger import get_logger
 from utils.rest_client import RestClient
@@ -16,28 +16,41 @@ from utils.validate_response import ValidateResponse
 LOGGER = get_logger(__name__, logging.DEBUG)
 
 
-# use_step_matcher("re")
-
-
 @given('I set the base url and headers')
 def step_set_base_url(context):
+    """
+    step to set the base url
+    :param context:
+    :return:
+    """
     LOGGER.debug("HEADERS: %s", context.headers)
     LOGGER.debug("URL: %s", context.url)
 
 
 @then('I receive a {status_code:d} status code in response')
 def step_verify_status_code(context, status_code):
+    """
+    Step to verify status code
+    :param context:
+    :param status_code:
+    :return:
+    """
     LOGGER.debug("Status code from response: %s", context.response["status"])
-    LOGGER.debug("Status code param: %s", type(status_code))
-    LOGGER.debug("Status code response: %s", type(context.response["status"]))
     context.status_code = status_code
-    assert int(status_code) == context.response["status"], " Expected 200 but received " + str(
-        context.response["status"])
+    assert int(status_code) == context.response["status"], (
+            " Expected 200 but received " + str(context.response["status"]))
 
 
-# @step(u'I call to projects endpoint using "(\\w*)" method( using the "([\\w\\s]*)" as parameter)*')
 @step('I call to {feature} endpoint using "{method_name}" method using the "{param}" as parameter')
 def step_call_endpoint(context, feature, method_name, param):
+    """
+    Step to call endpoint according to parameters send
+    :param context:
+    :param feature:
+    :param method_name:
+    :param param:
+    :return:
+    """
     # url base "https://api.todoist.com/rest/v2/" + feature .ie. projects, sections, tasks, etc.
     url = context.url + context.feature_name
     data = None
@@ -66,20 +79,29 @@ def step_call_endpoint(context, feature, method_name, param):
     context.method = method_name
 
 
-@step("I validate the response data from {option}")
-def step_impl(context, option):
+@step("I validate the response data from {option} using {list}")
+def step_impl(context, option, list):
     """
+    :param list:
     :param option:  str     option to validate response can be: file or database
     :type context: behave.runner.Context
     """
+    feature = context.feature_name
+    if list == "all":
+        feature = f"{context.feature_name}_all"
     ValidateResponse().validate_response(actual_response=context.response,
                                          method=context.method.lower(),
                                          expected_status_code=context.status_code,
-                                         feature=context.feature_name,
+                                         feature=feature,
                                          option=option)
 
 
 def get_url_by_feature(context):
+    """
+
+    :param context:
+    :return:
+    """
     feature_id = None
     if context.feature_name == "projects":
         feature_id = context.project_id
@@ -87,10 +109,6 @@ def get_url_by_feature(context):
         feature_id = context.section_id
     elif context.feature_name == "tasks":
         feature_id = context.task_id
-    elif context.feature_name == "comments":
-        feature_id = context.task_id
-    elif context.feature_name == "labels":
-        feature_id = context.label_id
 
     url = f"{context.url}{context.feature_name}/{feature_id}"
 
@@ -103,19 +121,22 @@ def append_to_resources_list(context, response):
     :param context:
     :param response:
     """
+    LOGGER.debug("Append to resource list")
+    LOGGER.debug("Feature: %s", context.feature_name)
     if context.feature_name == "projects":
-        context.project_list.append(response["body"]["id"])
+        context.resource_list["projects"].append(response["body"]["id"])
     if context.feature_name == "sections":
-        context.section_list.append(response["body"]["id"])
-    if context.feature_name == "comments":
-        context.comment_list.append(response["body"]["id"])
+        context.resource_list["sections"].append(response["body"]["id"])
     if context.feature_name == "tasks":
-        context.section_list.append(response["body"]["id"])
-    if context.feature_name == "labels":
-        context.label_list.append(response["body"]["id"])
+        context.resource_list["tasks"].append(response["body"]["id"])
 
 
 def get_data_by_feature(context):
+    """
+
+    :param context:
+    :return:
+    """
     LOGGER.debug("JSON: %s", context.text)
     dictionary = json.loads(context.text)
     if context.feature_name == "projects":
@@ -129,23 +150,13 @@ def get_data_by_feature(context):
     if context.feature_name == "tasks":
         if "project_id" in dictionary:
             dictionary["project_id"] = context.project_id
-    if context.feature_name == "comments":
-        if "comment_id" in dictionary:
-            dictionary["comment_id"] = context.comment_id
-        if "task_id" in dictionary:
-            dictionary["task_id"] = context.task_id
-        if "project_id" in dictionary:
-            dictionary["project_id"] = context.project_id
-    if context.feature_name == "labels":
-        if "label_id" in dictionary:
-            dictionary["label_id"] = context.label_id
 
     LOGGER.debug("Dictionary created: %s", dictionary)
     return dictionary
 
 
 @when("I want close the task")
-def step_impl(context):
+def step_close_task(context):
     """
     :type context: behave.runner.Context
     """
@@ -158,7 +169,7 @@ def step_impl(context):
 
 
 @then("I want to reopen the task")
-def step_impl(context):
+def step_reopen_task(context):
     """
     :type context: behave.runner.Context
     """

@@ -3,7 +3,7 @@ import logging
 
 from config.config import ABS_PATH
 from utils.logger import get_logger
-#from utils.mysql_connector import MYSQLConnector
+from utils.mysql_connector import MYSQLConnector
 from utils.singleton import Singleton
 
 LOGGER = get_logger(__name__, logging.DEBUG)
@@ -17,16 +17,16 @@ class ValidateResponse(metaclass=Singleton):
         if option == "file":
             file_name = f"{ABS_PATH}/input_data/{feature}_{method}_{expected_status_code}.json"
             input_data = self.get_input_data_from_json(file_name)
-        #else:
+        else:
             # validate db
-            # name = (f"{feature}_{method}_{expected_status_code}", )
-            # mysql_connect = MYSQLConnector()
-            # query = "SELECT * FROM todo_data.input_data where name = %s;"
-            # res = mysql_connect.execute_query(query, param=name)
-            # if res:
-            #     json_file = res[0][1]
-            #     input_data = json.loads(json_file)
-            #     LOGGER.debug("Input Data from DB: %s", input_data)
+            name = (f"{feature}_{method}_{expected_status_code}", )
+            mysql_connect = MYSQLConnector()
+            query = "SELECT * FROM todo_data.input_data where name = %s;"
+            res = mysql_connect.execute_query(query, param=name)
+            if res:
+                json_file = res[0][1]
+                input_data = json.loads(json_file)
+                LOGGER.debug("Input Data from DB: %s", input_data)
 
         if 'body' in actual_response and actual_response["body"] is not None:
             # compare actual with input data

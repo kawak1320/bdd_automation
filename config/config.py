@@ -14,3 +14,5 @@ ABS_PATH = os.path.abspath(__file__ + "../../../")
 WEB_HOOK = os.getenv("WEB_HOOK")
 
 BASE_URL = "https://api.todoist.com/rest/v2/"
+
+TOKEN_INFLUX = os.getenv("TOKEN_INFLUX")
